@@ -1,0 +1,5 @@
+{
+  "name": "John: Yam's Voice Assistant",
+  "description": "A futuristic voice assistant for Yam Pattir Cohen, powered by Gemini 2.5 Live API.",
+  "requestFramePermissions": ["microphone"]
+}
