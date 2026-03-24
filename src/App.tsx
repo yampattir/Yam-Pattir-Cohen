@@ -5,7 +5,18 @@ import { Info, ExternalLink, Linkedin, Mail, MessageSquare, ArrowRight } from 'l
 
 export default function App() {
   const [showAssistant, setShowAssistant] = useState(false);
-  const apiKey = process.env.GEMINI_API_KEY || '';
+  const [customApiKey, setCustomApiKey] = useState('');
+  const [showKeyInput, setShowKeyInput] = useState(false);
+
+  const envApiKey = process.env.GEMINI_API_KEY || '';
+  const activeApiKey = customApiKey || envApiKey;
+
+  const handleKeySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customApiKey.trim()) {
+      setShowKeyInput(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-700">
@@ -23,6 +34,14 @@ export default function App() {
             <a href="https://www.pintzetta.com" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors flex items-center gap-1.5">
               Pintzetta <ExternalLink className="w-3.5 h-3.5" />
             </a>
+            {!activeApiKey && (
+              <button 
+                onClick={() => setShowKeyInput(true)}
+                className="text-indigo-600 hover:text-indigo-700 font-bold"
+              >
+                Set API Key
+              </button>
+            )}
             <button 
               onClick={() => setShowAssistant(!showAssistant)}
               className="px-5 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-all shadow-sm flex items-center gap-2"
@@ -33,6 +52,55 @@ export default function App() {
           </div>
         </div>
       </nav>
+
+      {/* API Key Modal (for exported version) */}
+      <AnimatePresence>
+        {showKeyInput && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-100"
+            >
+              <h2 className="text-xl font-bold mb-2">Configure Gemini API Key</h2>
+              <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+                To use the voice assistant after exporting, you need to provide a Gemini API key. 
+                You can get one from the <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">Google AI Studio</a>.
+              </p>
+              <form onSubmit={handleKeySubmit} className="space-y-4">
+                <input 
+                  type="password"
+                  placeholder="Enter your API Key"
+                  value={customApiKey}
+                  onChange={(e) => setCustomApiKey(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                  required
+                />
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="submit"
+                    className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
+                  >
+                    Save Key
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setShowKeyInput(false)}
+                    className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hero Section */}
       <main className="max-w-6xl mx-auto px-6 pt-20 pb-32">
@@ -76,7 +144,13 @@ export default function App() {
               className="flex items-center gap-4"
             >
               <button 
-                onClick={() => setShowAssistant(true)}
+                onClick={() => {
+                  if (!activeApiKey) {
+                    setShowKeyInput(true);
+                  } else {
+                    setShowAssistant(true);
+                  }
+                }}
                 className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center gap-2 group"
               >
                 Talk to my Assistant
@@ -134,7 +208,7 @@ export default function App() {
                     </button>
                   </div>
                   <div className="p-2">
-                    <LiveAssistant apiKey={apiKey} />
+                    <LiveAssistant apiKey={activeApiKey} />
                   </div>
                 </motion.div>
               ) : (
@@ -144,7 +218,13 @@ export default function App() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl shadow-slate-200 group cursor-pointer"
-                  onClick={() => setShowAssistant(true)}
+                  onClick={() => {
+                    if (!activeApiKey) {
+                      setShowKeyInput(true);
+                    } else {
+                      setShowAssistant(true);
+                    }
+                  }}
                 >
                   <img 
                     src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&q=80&w=1000" 
@@ -155,8 +235,10 @@ export default function App() {
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
                   <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
                     <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-xs font-bold text-slate-900">John is Online</span>
+                      <div className={`w-2 h-2 rounded-full animate-pulse ${activeApiKey ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                      <span className="text-xs font-bold text-slate-900">
+                        {activeApiKey ? 'John is Online' : 'API Key Required'}
+                      </span>
                     </div>
                     <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                       <MessageSquare className="w-6 h-6" />
